@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: luxe-ai-concierge
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run web
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: hotel_concierge
+      - key: MONGODB_COLLECTION
+        value: chat_history

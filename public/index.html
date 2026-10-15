@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grand Horizon Hotel — AI Concierge</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="avatar">🏨</div>
+      <div>
+        <h1>Grand Horizon Hotel</h1>
+        <p class="subtitle">AI Concierge — ask me anything</p>
+      </div>
+    </header>
+
+    <main id="messages" class="messages">
+      <!-- Welcome message -->
+      <div class="msg bot">
+        <div class="bubble">
+          Hello! I'm your concierge. Ask me about check-in, room prices,
+          pets, amenities, or local attractions.
+        </div>
+      </div>
+    </main>
+
+    <form id="form" class="composer">
+      <input
+        id="input"
+        type="text"
+        placeholder="Type your message..."
+        autocomplete="off"
+        autofocus
+      />
+      <button id="send" type="submit" aria-label="Send">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+
+  <!-- Socket.IO client is auto-served by the server -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "hotel-rag-bot-js",
+  "version": "1.0.0",
+  "description": "RAG-powered hotel concierge bot using LangChain.js and Gemini",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "web": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "overrides": {
+    "@langchain/core": "^1.0.0"
+  },
+  "dependencies": {
+    "@langchain/community": "^1.1.0",
+    "@langchain/core": "^1.0.0",
+    "@langchain/google": "^0.2.0",
+    "@langchain/google-genai": "^2.3.2",
+    "@langchain/textsplitters": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.3.0",
+    "pdf-parse": "^1.1.1",
+    "socket.io": "^4.8.4"
+  }
+}

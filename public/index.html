@@ -2,48 +2,473 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grand Horizon Hotel — AI Concierge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8f6f1" />
+  <title>LUXE AI — The Grand Aurelia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="app">
-    <header class="header">
-      <div class="avatar">🏨</div>
-      <div>
-        <h1>Grand Horizon Hotel</h1>
-        <p class="subtitle">AI Concierge — ask me anything</p>
-      </div>
-    </header>
+  <div class="shell">
 
-    <main id="messages" class="messages">
-      <!-- Welcome message -->
-      <div class="msg bot">
-        <div class="bubble">
-          Hello! I'm your concierge. Ask me about check-in, room prices,
-          pets, amenities, or local attractions.
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div class="brand-text">
+          <div class="brand-name">Grand Aurelia</div>
+          <div class="brand-sub">LUXE AI Concierge</div>
         </div>
       </div>
+
+      <nav class="nav">
+        <div class="nav-label">Menu</div>
+        <button class="nav-item active" data-view="home">
+          <span class="nav-icon">◈</span><span>Home</span>
+        </button>
+        <button class="nav-item" data-view="concierge">
+          <span class="nav-icon">✦</span><span>AI Concierge</span>
+        </button>
+        <button class="nav-item" data-view="guide">
+          <span class="nav-icon">❖</span><span>Hotel Guide</span>
+        </button>
+        <button class="nav-item" data-view="dining">
+          <span class="nav-icon">◐</span><span>Dining</span>
+        </button>
+        <button class="nav-item" data-view="spa">
+          <span class="nav-icon">◉</span><span>Spa &amp; Wellness</span>
+        </button>
+        <button class="nav-item" data-view="requests">
+          <span class="nav-icon">◇</span><span>My Requests</span>
+        </button>
+        <button class="nav-item" data-view="local">
+          <span class="nav-icon">◎</span><span>Local Experiences</span>
+        </button>
+      </nav>
+
+      <div class="nav-divider"></div>
+
+      <nav class="nav">
+        <button class="nav-item" data-view="profile">
+          <span class="nav-icon">◌</span><span>My Profile</span>
+        </button>
+        <button class="nav-item" data-view="help">
+          <span class="nav-icon">?</span><span>Help &amp; Support</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="guest-card">
+          <div class="guest-avatar">A</div>
+          <div class="guest-info">
+            <div class="guest-name">Alex Morgan</div>
+            <div class="guest-room">Suite 412</div>
+          </div>
+        </div>
+        <div class="contact-line">
+          <span>Reception</span>
+          <a href="tel:+913340002026">+91 33 4000 2026</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Backdrop for mobile sidebar -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- ═══════════ MAIN ═══════════ -->
+    <main class="main" id="main">
+
+      <!-- HOME VIEW -->
+      <section class="view active" id="view-home">
+        <div class="hero">
+          <div class="hero-eyebrow" id="greeting-time">Good evening</div>
+          <h1 class="hero-title">Welcome to<br/>The Grand Aurelia.</h1>
+          <p class="hero-sub">
+            How may I make your stay more comfortable today?
+            Ask about dining, spa, or anything else — I'm here to help.
+          </p>
+        </div>
+
+        <div class="chat-frame" id="chat-frame-home">
+          <div class="chat-stream" id="messages-home">
+            <div class="chat-intro">
+              <div class="concierge-sig">
+                <div class="concierge-mark">A</div>
+                <div>
+                  <div class="concierge-name">Aurelia</div>
+                  <div class="concierge-role">Your personal concierge</div>
+                </div>
+              </div>
+              <p class="chat-intro-text">
+                I have access to everything about the hotel — dining, spa treatments,
+                event schedules, and local recommendations. Where shall we begin?
+              </p>
+            </div>
+          </div>
+
+          <div class="suggestions" id="suggestions-home">
+            <div class="suggestions-label">Try asking</div>
+            <div class="suggestion-list">
+              <button class="suggestion" data-q="What time is check-in and check-out?">Check-in &amp; check-out times</button>
+              <button class="suggestion" data-q="What spa treatments do you offer?">Available spa treatments</button>
+              <button class="suggestion" data-q="What's on the dinner menu?">Tonight's dining menu</button>
+              <button class="suggestion" data-q="What events are happening this week?">This week's events</button>
+              <button class="suggestion" data-q="What attractions are nearby?">Nearby attractions</button>
+            </div>
+          </div>
+
+          <form class="composer" id="form-home">
+            <div class="composer-field">
+              <input
+                type="text"
+                id="input-home"
+                class="composer-input"
+                placeholder="Ask the concierge anything..."
+                autocomplete="off"
+              />
+              <button type="submit" class="composer-send" aria-label="Send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+            <div class="composer-meta">
+              <span class="composer-context" id="context-home">Searching all hotel knowledge</span>
+              <span class="composer-hint">Press Enter to send</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- CONCIERGE VIEW -->
+      <section class="view" id="view-concierge">
+        <div class="view-header">
+          <div class="view-eyebrow">Assistant</div>
+          <h1 class="view-title">Aurelia</h1>
+          <p class="view-sub">Your personal concierge, available at any hour.</p>
+        </div>
+
+        <div class="category-tabs" id="category-tabs">
+          <button class="tab active" data-category="all">All</button>
+          <button class="tab" data-category="general">Hotel info</button>
+          <button class="tab" data-category="spa">Spa</button>
+          <button class="tab" data-category="dining">Dining</button>
+          <button class="tab" data-category="events">Events</button>
+        </div>
+
+        <div class="chat-frame chat-frame-full">
+          <div class="chat-stream" id="messages-concierge">
+            <div class="chat-intro">
+              <div class="concierge-sig">
+                <div class="concierge-mark">A</div>
+                <div>
+                  <div class="concierge-name">Aurelia</div>
+                  <div class="concierge-role">Your personal concierge</div>
+                </div>
+              </div>
+              <p class="chat-intro-text">
+                Good evening. I'm here to assist with anything you need during
+                your stay — from spa bookings to restaurant recommendations.
+              </p>
+            </div>
+          </div>
+          <form class="composer" id="form-concierge">
+            <div class="composer-field">
+              <input
+                type="text"
+                id="input-concierge"
+                class="composer-input"
+                placeholder="Ask the concierge anything..."
+                autocomplete="off"
+              />
+              <button type="submit" class="composer-send" aria-label="Send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+            <div class="composer-meta">
+              <span class="composer-context" id="context-concierge">Searching all hotel knowledge</span>
+              <span class="composer-hint">Press Enter to send</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- GUIDE VIEW -->
+      <section class="view" id="view-guide">
+        <div class="view-header">
+          <div class="view-eyebrow">Information</div>
+          <h1 class="view-title">Hotel Guide</h1>
+          <p class="view-sub">Everything about the hotel, organized for easy reference.</p>
+        </div>
+
+        <div class="guide-grid">
+          <button class="guide-card" data-q="What time is check-in and check-out?">
+            <div class="guide-label">Arrival</div>
+            <div class="guide-title">Check-in &amp; Check-out</div>
+            <div class="guide-desc">Times, early access, luggage storage</div>
+          </button>
+          <button class="guide-card" data-q="What is the pet policy?">
+            <div class="guide-label">Policy</div>
+            <div class="guide-title">Pet Policy</div>
+            <div class="guide-desc">Welcoming pets, guidelines, and fees</div>
+          </button>
+          <button class="guide-card" data-q="What is the cancellation policy?">
+            <div class="guide-label">Policy</div>
+            <div class="guide-title">Cancellation</div>
+            <div class="guide-desc">Terms for flexible and non-refundable rates</div>
+          </button>
+          <button class="guide-card" data-q="What amenities does the hotel have?">
+            <div class="guide-label">Facilities</div>
+            <div class="guide-title">Amenities</div>
+            <div class="guide-desc">Pool, gym, spa, business lounge</div>
+          </button>
+          <button class="guide-card" data-q="What room types do you offer?">
+            <div class="guide-label">Accommodation</div>
+            <div class="guide-title">Rooms &amp; Suites</div>
+            <div class="guide-desc">Categories, capacity, and rates</div>
+          </button>
+          <button class="guide-card" data-q="How do I contact reception?">
+            <div class="guide-label">Contact</div>
+            <div class="guide-title">Reception</div>
+            <div class="guide-desc">Available 24 hours a day</div>
+          </button>
+        </div>
+
+        <div class="guide-note">
+          Select any topic to ask Aurelia about it directly.
+        </div>
+      </section>
+
+      <!-- DINING VIEW -->
+      <section class="view" id="view-dining">
+        <div class="view-header">
+          <div class="view-eyebrow">Culinary</div>
+          <h1 class="view-title">Dining</h1>
+          <p class="view-sub">Breakfast, lunch, dinner, and 24-hour room service.</p>
+        </div>
+
+        <div class="schedule">
+          <div class="schedule-row">
+            <div class="schedule-label">Breakfast</div>
+            <div class="schedule-time">7:00 — 10:30</div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Lunch</div>
+            <div class="schedule-time">12:30 — 15:00</div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Dinner</div>
+            <div class="schedule-time">19:00 — 23:00</div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Room Service</div>
+            <div class="schedule-time">24 hours</div>
+          </div>
+        </div>
+
+        <div class="action-block">
+          <div class="action-title">Ask about the menu</div>
+          <div class="suggestion-list">
+            <button class="suggestion" data-q="What's on the breakfast menu?">Breakfast menu</button>
+            <button class="suggestion" data-q="What's on the dinner menu?">Dinner menu</button>
+            <button class="suggestion" data-q="Do you have vegetarian options?">Vegetarian options</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SPA VIEW -->
+      <section class="view" id="view-spa">
+        <div class="view-header">
+          <div class="view-eyebrow">Wellness</div>
+          <h1 class="view-title">Spa &amp; Wellness</h1>
+          <p class="view-sub">Massages, facials, and body treatments — open daily 9:00 to 21:00.</p>
+        </div>
+
+        <div class="schedule">
+          <div class="schedule-row">
+            <div class="schedule-label">Swimming Pool</div>
+            <div class="schedule-time">6:00 — 22:00</div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Fitness Gym</div>
+            <div class="schedule-time">Open 24 hours</div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Spa Treatments</div>
+            <div class="schedule-time">9:00 — 21:00</div>
+          </div>
+        </div>
+
+        <div class="action-block">
+          <div class="action-title">Discover treatments</div>
+          <div class="suggestion-list">
+            <button class="suggestion" data-q="What spa treatments do you offer?">Full treatment menu</button>
+            <button class="suggestion" data-q="How much does a massage cost?">Massage pricing</button>
+            <button class="suggestion" data-q="What are the spa's opening hours?">Spa hours</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- REQUESTS VIEW -->
+      <section class="view" id="view-requests">
+        <div class="view-header">
+          <div class="view-eyebrow">Service</div>
+          <h1 class="view-title">My Requests</h1>
+          <p class="view-sub">Track requests made during your stay.</p>
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-mark">◇</div>
+          <div class="empty-title">No requests yet</div>
+          <div class="empty-desc">
+            When you ask Aurelia for services — extra towels, a spa booking,
+            a restaurant reservation — they'll appear here with live status.
+          </div>
+          <button class="empty-action" data-view="concierge">Start a request</button>
+        </div>
+      </section>
+
+      <!-- LOCAL VIEW -->
+      <section class="view" id="view-local">
+        <div class="view-header">
+          <div class="view-eyebrow">Around the city</div>
+          <h1 class="view-title">Local Experiences</h1>
+          <p class="view-sub">Curated recommendations near the hotel.</p>
+        </div>
+
+        <div class="guide-grid">
+          <button class="guide-card" data-q="Tell me about the Victoria Memorial">
+            <div class="guide-label">4.5 km</div>
+            <div class="guide-title">Victoria Memorial</div>
+            <div class="guide-desc">Historic monument and museum</div>
+          </button>
+          <button class="guide-card" data-q="Tell me about Howrah Bridge">
+            <div class="guide-label">5.5 km</div>
+            <div class="guide-title">Howrah Bridge</div>
+            <div class="guide-desc">Iconic landmark over the Hooghly</div>
+          </button>
+          <button class="guide-card" data-q="Tell me about Park Street">
+            <div class="guide-label">2.8 km</div>
+            <div class="guide-title">Park Street</div>
+            <div class="guide-desc">Dining, cafés, and nightlife</div>
+          </button>
+          <button class="guide-card" data-q="Tell me about the Indian Museum">
+            <div class="guide-label">3.5 km</div>
+            <div class="guide-title">Indian Museum</div>
+            <div class="guide-desc">Art, archaeology, and natural history</div>
+          </button>
+        </div>
+      </section>
+
+      <!-- PROFILE VIEW -->
+      <section class="view" id="view-profile">
+        <div class="view-header">
+          <div class="view-eyebrow">Account</div>
+          <h1 class="view-title">My Profile</h1>
+          <p class="view-sub">Your guest details and stay information.</p>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-row">
+            <div class="profile-label">Guest</div>
+            <div class="profile-value">Alex Morgan</div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-label">Room</div>
+            <div class="profile-value">Suite 412</div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-label">Check-in</div>
+            <div class="profile-value">15 October 2026</div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-label">Check-out</div>
+            <div class="profile-value">18 October 2026</div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-label">Language</div>
+            <div class="profile-value">English</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HELP VIEW -->
+      <section class="view" id="view-help">
+        <div class="view-header">
+          <div class="view-eyebrow">Assistance</div>
+          <h1 class="view-title">Help &amp; Support</h1>
+          <p class="view-sub">We're here, day and night.</p>
+        </div>
+
+        <div class="schedule">
+          <div class="schedule-row">
+            <div class="schedule-label">Reception</div>
+            <div class="schedule-time"><a href="tel:+913340002026">+91 33 4000 2026</a></div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Email</div>
+            <div class="schedule-time"><a href="mailto:stay@grandhorizon.example">stay@grandhorizon.example</a></div>
+          </div>
+          <div class="schedule-row">
+            <div class="schedule-label">Availability</div>
+            <div class="schedule-time">24 hours</div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
-    <form id="form" class="composer">
-      <input
-        id="input"
-        type="text"
-        placeholder="Type your message..."
-        autocomplete="off"
-        autofocus
-      />
-      <button id="send" type="submit" aria-label="Send">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-        </svg>
-      </button>
-    </form>
+    <!-- ═══════════ CONTEXT PANEL ═══════════ -->
+    <aside class="context" id="context">
+      <div class="context-section">
+        <div class="context-label">Your Stay</div>
+        <div class="context-title">Suite 412</div>
+        <div class="stay-dates">
+          <div class="stay-date">
+            <div class="stay-date-label">Check-in</div>
+            <div class="stay-date-value">15 Oct</div>
+          </div>
+          <div class="stay-divider"></div>
+          <div class="stay-date">
+            <div class="stay-date-label">Check-out</div>
+            <div class="stay-date-value">18 Oct</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="context-section">
+        <div class="context-label">Hotel Hours</div>
+        <div class="context-list">
+          <div class="context-item"><span>Breakfast</span><span>7:00 — 10:30</span></div>
+          <div class="context-item"><span>Pool</span><span>6:00 — 22:00</span></div>
+          <div class="context-item"><span>Spa</span><span>9:00 — 21:00</span></div>
+          <div class="context-item"><span>Reception</span><span>24 hours</span></div>
+        </div>
+      </div>
+
+      <div class="context-section">
+        <div class="context-label">Concierge</div>
+        <div class="status-row">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="status-text" id="status-text">Connecting…</span>
+        </div>
+        <p class="context-note">Available at any hour for questions, requests, and recommendations.</p>
+      </div>
+    </aside>
+
+    <!-- Mobile menu toggle -->
+    <button class="mobile-toggle" id="mobile-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+
   </div>
 
-  <!-- Socket.IO client is auto-served by the server -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="/chat.js"></script>
 </body>

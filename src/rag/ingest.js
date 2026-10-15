@@ -60,12 +60,22 @@ export async function buildVectorStore(chunks) {
  * @param {string[]} pdfPaths
  * @returns {Promise<MemoryVectorStore>}
  */
-export async function indexDocuments(pdfPaths) {
+export async function indexDocuments(pdfConfigs) {
   console.log("Indexing documents...");
   const allChunks = [];
-  for (const path of pdfPaths) {
+
+  for (const { path, category } of pdfConfigs) {
     const chunks = await loadAndSplitPDF(path);
+
+    // Tag every chunk with its source category
+    for (const chunk of chunks) {
+      chunk.metadata.category = category;
+      chunk.metadata.source = path;
+    }
+
     allChunks.push(...chunks);
   }
+
+  console.log(`  Tagged ${allChunks.length} chunk(s) with categories`);
   return await buildVectorStore(allChunks);
 }

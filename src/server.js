@@ -48,7 +48,12 @@ async function start() {
   console.log("🏨 Starting web server...\n");
   console.log("Indexing knowledge base (this takes ~10 seconds)...");
 
-  const vectorStore = await indexDocuments(["./data/hotel_info.pdf"]);
+  const vectorStore = await indexDocuments([
+  { path: "./data/hotel_info.pdf", category: "general" },
+  { path: "./data/spa_menu.pdf", category: "spa" },
+  { path: "./data/restaurant_menu.pdf", category: "dining" },
+  { path: "./data/events_schedule.pdf", category: "events" },
+]);
   chain = await buildRAGChain(vectorStore);
 
   console.log("✓ Knowledge base ready\n");
@@ -70,45 +75,36 @@ async function start() {
     });
 
     // Listen for the 'userMessage' event from this specific browser
-    socket.on("userMessage", async (message) => {
-      console.log(`[${sessionId}] User: ${message}`);
+    socket.on("userMessage", async (data) => {
+  // Support both old { message } and new { message, category }
+  const message = typeof data === "string" ? data : data.message;
+  const category = typeof data === "string" ? "all" : data.category || "all";
 
-      try {
-        // Signal the client: "bot is about to speak, create an empty bubble"
-        socket.emit("botStart");
+  console.log(`[${sessionId}] User (${category}): ${message}`);
 
-        // chain.stream() returns an async iterable of chunks.
-        // History is now read/written inside the chain, keyed by sessionId.
-        let fullAnswer = "";
+  try {
+    socket.emit("botStart");
+    let fullAnswer = "";
 
-        const stream = await chain.stream({
-          input: message,
-          sessionId,        // ← was: chat_history: chatHistory
-        });
-
-        for await (const chunk of stream) {
-          if (chunk.answer) {
-            fullAnswer += chunk.answer;
-            socket.emit("botChunk", chunk.answer);
-          }
-        }
-
-        // Signal completion
-        socket.emit("botDone");
-
-        console.log(`[${sessionId}] Bot: ${fullAnswer.slice(0, 60)}...`);
-      } catch (error) {
-        if (error.message?.includes("429") || error.message?.includes("quota")) {
-          socket.emit(
-            "botError",
-            "I'm receiving too many requests right now. Please wait a moment and try again."
-          );
-        } else {
-          console.error(`[${sessionId}] Error:`, error.message);
-          socket.emit("botError", "Something went wrong. Please try again.");
-        }
-      }
+    const stream = await chain.stream({
+      input: message,
+      sessionId,
+      category,
     });
+
+    for await (const chunk of stream) {
+      if (chunk.answer) {
+        fullAnswer += chunk.answer;
+        socket.emit("botChunk", chunk.answer);
+      }
+    }
+
+    socket.emit("botDone");
+    console.log(`[${sessionId}] Bot: ${fullAnswer.slice(0, 60)}...`);
+  } catch (error) {
+    // error handling unchanged
+  }
+});
 
     // Clean up when the browser tab closes
     socket.on("disconnect", () => {

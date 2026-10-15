@@ -1,163 +1,380 @@
 // public/chat.js
 //
-// Client-side chat logic. Connects to the server via Socket.IO,
-// sends user messages, and renders bot responses with a smooth
-// character-by-character typing effect (independent of how the
-// server batches streaming tokens).
+// LUXE AI — concierge client with sidebar navigation, streaming responses,
+// session persistence, and mobile-friendly interactions.
 
-// io() is defined globally by /socket.io/socket.io.js
 const socket = io();
-// Persistent session ID: survives page refresh, stored in localStorage.
+
+// ─── Element refs ──────────────────────────────────────────────
+
+const views = {
+  home: document.getElementById("view-home"),
+  concierge: document.getElementById("view-concierge"),
+  guide: document.getElementById("view-guide"),
+  dining: document.getElementById("view-dining"),
+  spa: document.getElementById("view-spa"),
+  requests: document.getElementById("view-requests"),
+  local: document.getElementById("view-local"),
+  profile: document.getElementById("view-profile"),
+  help: document.getElementById("view-help"),
+};
+
+const streams = {
+  home: document.getElementById("messages-home"),
+  concierge: document.getElementById("messages-concierge"),
+};
+
+const forms = {
+  home: document.getElementById("form-home"),
+  concierge: document.getElementById("form-concierge"),
+};
+
+const inputs = {
+  home: document.getElementById("input-home"),
+  concierge: document.getElementById("input-concierge"),
+};
+
+const contexts = {
+  home: document.getElementById("context-home"),
+  concierge: document.getElementById("context-concierge"),
+};
+
+const navItems = document.querySelectorAll(".nav-item");
+const sidebar = document.getElementById("sidebar");
+const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+const mobileToggle = document.getElementById("mobile-toggle");
+const statusDot = document.getElementById("status-dot");
+const statusText = document.getElementById("status-text");
+
+// ─── State ─────────────────────────────────────────────────────
+
+let currentView = "home";
+let currentCategory = "all";
+let isWaiting = false;
+
+// ─── Session ID ────────────────────────────────────────────────
+
 let sessionId = localStorage.getItem("chat_session_id");
 if (!sessionId) {
   sessionId = crypto.randomUUID();
   localStorage.setItem("chat_session_id", sessionId);
 }
 
-// Tell the server our session ID on connect
-socket.on("connect", () => {
-  console.log("✓ Connected:", socket.id, "| session:", sessionId);
-  socket.emit("restoreSession", sessionId);
+// ─── Time-of-day greeting ──────────────────────────────────────
+
+(function setGreeting() {
+  const el = document.getElementById("greeting-time");
+  if (!el) return;
+  const h = new Date().getHours();
+  let greeting = "Good evening";
+  if (h < 12) greeting = "Good morning";
+  else if (h < 17) greeting = "Good afternoon";
+  el.textContent = greeting;
+})();
+
+// ─── Sidebar open/close ────────────────────────────────────────
+
+function openSidebar() {
+  sidebar.classList.add("open");
+  sidebarBackdrop.classList.add("visible");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSidebar() {
+  sidebar.classList.remove("open");
+  sidebarBackdrop.classList.remove("visible");
+  document.body.style.overflow = "";
+}
+
+mobileToggle?.addEventListener("click", () => {
+  if (sidebar.classList.contains("open")) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
 });
 
-const messages = document.getElementById("messages");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-const sendBtn = document.getElementById("send");
+sidebarBackdrop?.addEventListener("click", closeSidebar);
 
-let isWaiting = false; // prevents double-submits
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && sidebar.classList.contains("open")) {
+    closeSidebar();
+  }
+});
 
-/**
- * Append a message bubble to the chat.
- * @param {string} text
- * @param {"user"|"bot"|"error"} kind
- * @returns {HTMLElement} the bubble element
- */
-function addMessage(text, kind) {
-  const wrapper = document.createElement("div");
-  wrapper.className = `msg ${kind}`;
+// ─── Navigation ────────────────────────────────────────────────
 
+function switchView(name) {
+  Object.values(views).forEach((v) => v?.classList.remove("active"));
+  views[name]?.classList.add("active");
+
+  navItems.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === name);
+  });
+
+  currentView = name;
+  closeSidebar();
+
+  // Focus the composer if entering a chat view
+  if (inputs[name]) {
+    setTimeout(() => inputs[name].focus(), 150);
+  }
+
+  // Scroll main to top on view change
+  document.getElementById("main")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+navItems.forEach((btn) => {
+  btn.addEventListener("click", () => switchView(btn.dataset.view));
+});
+
+// Buttons that switch views from inside content (e.g. empty-state action)
+document.querySelectorAll("[data-view]").forEach((el) => {
+  if (el.classList.contains("nav-item")) return;
+  el.addEventListener("click", () => switchView(el.dataset.view));
+});
+
+// ─── Category tabs ─────────────────────────────────────────────
+
+document.querySelectorAll("#category-tabs .tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document
+      .querySelectorAll("#category-tabs .tab")
+      .forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentCategory = tab.dataset.category;
+
+    // Update composer hint
+    const hintMap = {
+      all: "Searching all hotel knowledge",
+      general: "Searching hotel information",
+      spa: "Searching spa & wellness",
+      dining: "Searching dining",
+      events: "Searching events",
+    };
+    Object.values(contexts).forEach((el) => {
+      if (el) el.textContent = hintMap[currentCategory];
+    });
+  });
+});
+
+// ─── Message rendering ─────────────────────────────────────────
+
+function addUserMessage(streamEl, text) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg user";
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = text;
+  wrap.appendChild(bubble);
+  streamEl.appendChild(wrap);
+  streamEl.scrollTop = streamEl.scrollHeight;
+}
 
-  wrapper.appendChild(bubble);
-  messages.appendChild(wrapper);
-  messages.scrollTop = messages.scrollHeight;
+function addBotMessage(streamEl) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg bot";
+
+  const sig = document.createElement("div");
+  sig.className = "msg-sig";
+  sig.innerHTML = `<div class="msg-mark">A</div><div class="msg-name">Aurelia</div>`;
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  wrap.appendChild(sig);
+  wrap.appendChild(bubble);
+  streamEl.appendChild(wrap);
+  streamEl.scrollTop = streamEl.scrollHeight;
   return bubble;
 }
 
-function setWaiting(waiting) {
-  isWaiting = waiting;
-  sendBtn.disabled = waiting;
-  input.disabled = waiting;
+function addErrorMessage(streamEl, text) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg error";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  streamEl.appendChild(wrap);
+  streamEl.scrollTop = streamEl.scrollHeight;
 }
 
-// --- Form submit ---
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const text = input.value.trim();
-  if (!text || isWaiting) return;
+// ─── Submit handlers ───────────────────────────────────────────
 
-  addMessage(text, "user");
-  input.value = "";
-  setWaiting(true);
+function handleSubmit(viewKey) {
+  return (e) => {
+    e.preventDefault();
+    const inputEl = inputs[viewKey];
+    const text = inputEl.value.trim();
+    if (!text || isWaiting) return;
 
-  // The bot bubble is created by the "botStart" handler below.
-  socket.emit("userMessage", text);
+    submitMessage(text, viewKey);
+    inputEl.value = "";
+  };
+}
+
+forms.home?.addEventListener("submit", handleSubmit("home"));
+forms.concierge?.addEventListener("submit", handleSubmit("concierge"));
+
+// ─── Suggestion buttons ────────────────────────────────────────
+
+document.querySelectorAll(".suggestion").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (isWaiting) return;
+    const q = btn.dataset.q;
+    if (!q) return;
+    submitMessage(q, currentView === "concierge" ? "concierge" : "home");
+  });
 });
 
-// --- Streaming protocol with smooth typing effect ---
-//
-// The LLM may emit large chunks instead of single tokens.
-// We buffer incoming text and render it character by character
-// at a fixed rate, giving a smooth "typing" experience regardless
-// of how the server batches tokens.
+// ─── Guide cards ───────────────────────────────────────────────
 
-let currentBubble = null;   // the bot bubble currently being filled
-let pendingText = "";       // buffer of text not yet rendered
-let typingTimer = null;     // setInterval id
-let streamDone = false;     // has the server finished streaming?
+document.querySelectorAll(".guide-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    if (isWaiting) return;
+    const q = card.dataset.q;
+    if (!q) return;
+    // Route guide-card questions through the concierge view
+    switchView("concierge");
+    setTimeout(() => submitMessage(q, "concierge"), 200);
+  });
+});
 
-const TYPING_SPEED_MS = 15; // ms per character (~66 chars/sec)
+// ─── Submit ────────────────────────────────────────────────────
 
-function startTypingLoop() {
-  if (typingTimer) return;
+function submitMessage(text, viewKey) {
+  const streamEl = streams[viewKey];
+  if (!streamEl) return;
 
-  typingTimer = setInterval(() => {
-    if (!currentBubble) return;
+  addUserMessage(streamEl, text);
+  isWaiting = true;
+  setInputsDisabled(true);
 
-    if (pendingText.length > 0) {
-      // Take one character at a time from the buffer
-      const char = pendingText[0];
-      pendingText = pendingText.slice(1);
-      currentBubble.textContent += char;
-      messages.scrollTop = messages.scrollHeight;
-    } else if (streamDone) {
-      // Buffer is empty and the stream is finished — clean up
-      clearInterval(typingTimer);
-      typingTimer = null;
+  socket.emit("userMessage", { message: text, category: currentCategory });
+}
 
-      if (currentBubble) {
-        currentBubble.parentElement.classList.remove("typing");
-        currentBubble = null;
+// ─── Streaming state ───────────────────────────────────────────
+
+const streamingState = {
+  home: { bubble: null, buffer: "", timer: null, done: false },
+  concierge: { bubble: null, buffer: "", timer: null, done: false },
+};
+
+const TYPING_SPEED_MS = 15;
+
+function activeKey() {
+  return currentView === "concierge" ? "concierge" : "home";
+}
+
+function startTypingLoop(key) {
+  const state = streamingState[key];
+  if (state.timer) return;
+
+  state.timer = setInterval(() => {
+    if (!state.bubble) return;
+
+    if (state.buffer.length > 0) {
+      const char = state.buffer[0];
+      state.buffer = state.buffer.slice(1);
+      state.bubble.textContent += char;
+
+      const streamEl = streams[key];
+      if (streamEl) streamEl.scrollTop = streamEl.scrollHeight;
+    } else if (state.done) {
+      clearInterval(state.timer);
+      state.timer = null;
+      if (state.bubble) {
+        state.bubble.parentElement.classList.remove("typing");
+        state.bubble = null;
       }
-      setWaiting(false);
-      input.focus();
+      isWaiting = false;
+      setInputsDisabled(false);
+
+      const inputEl = inputs[key];
+      if (inputEl) inputEl.focus();
     }
   }, TYPING_SPEED_MS);
 }
 
-socket.on("botStart", () => {
-  console.log("[stream] botStart");
-  currentBubble = addMessage("", "bot");
-  currentBubble.parentElement.classList.add("typing");
+function setInputsDisabled(disabled) {
+  Object.values(inputs).forEach((el) => {
+    if (el) el.disabled = disabled;
+  });
+  document.querySelectorAll(".composer-send").forEach((btn) => {
+    btn.disabled = disabled;
+  });
+  document.querySelectorAll(".suggestion").forEach((btn) => {
+    btn.disabled = disabled;
+  });
+}
 
-  pendingText = "";
-  streamDone = false;
-  startTypingLoop();
+// ─── Socket events ─────────────────────────────────────────────
+
+socket.on("connect", () => {
+  statusDot?.classList.remove("offline");
+  if (statusText) statusText.textContent = "Online";
+  socket.emit("restoreSession", sessionId);
+});
+
+socket.on("disconnect", () => {
+  statusDot?.classList.add("offline");
+  if (statusText) statusText.textContent = "Offline";
+});
+
+socket.on("botStart", () => {
+  const key = activeKey();
+  const streamEl = streams[key];
+  if (!streamEl) return;
+
+  const bubble = addBotMessage(streamEl);
+  bubble.parentElement.classList.add("typing");
+
+  streamingState[key].bubble = bubble;
+  streamingState[key].buffer = "";
+  streamingState[key].done = false;
+  startTypingLoop(key);
 });
 
 socket.on("botChunk", (text) => {
-  console.log("[stream] chunk:", JSON.stringify(text));
-
-  if (!currentBubble) {
-    // Safety: chunk arrived before botStart
-    currentBubble = addMessage("", "bot");
-    currentBubble.parentElement.classList.add("typing");
-    startTypingLoop();
+  const key = activeKey();
+  const state = streamingState[key];
+  if (!state.bubble) {
+    const streamEl = streams[key];
+    if (!streamEl) return;
+    const bubble = addBotMessage(streamEl);
+    bubble.parentElement.classList.add("typing");
+    state.bubble = bubble;
+    state.done = false;
+    startTypingLoop(key);
   }
-
-  // Just buffer — the typing loop will render it character by character
-  pendingText += text;
+  state.buffer += text;
 });
 
 socket.on("botDone", () => {
-  console.log("[stream] botDone");
-  streamDone = true;
-  // The typing loop drains the buffer, then cleans up.
+  const key = activeKey();
+  streamingState[key].done = true;
 });
 
 socket.on("botError", (text) => {
-  console.log("[stream] error:", text);
+  const key = activeKey();
+  const state = streamingState[key];
 
-  if (typingTimer) {
-    clearInterval(typingTimer);
-    typingTimer = null;
+  if (state.timer) {
+    clearInterval(state.timer);
+    state.timer = null;
   }
-  pendingText = "";
-  streamDone = false;
+  state.buffer = "";
+  state.done = false;
 
-  if (currentBubble) {
-    currentBubble.parentElement.remove();
-    currentBubble = null;
+  if (state.bubble) {
+    state.bubble.parentElement.remove();
+    state.bubble = null;
   }
 
-  addMessage(text, "error");
-  setWaiting(false);
-  input.focus();
+  const streamEl = streams[key];
+  if (streamEl) addErrorMessage(streamEl, text);
+
+  isWaiting = false;
+  setInputsDisabled(false);
 });
-
-// --- Connection status (useful during development) ---
-socket.on("connect", () => console.log("✓ Connected:", socket.id));
-socket.on("disconnect", () => console.log("✗ Disconnected"));

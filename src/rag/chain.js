@@ -16,7 +16,11 @@ dotenv.config();
 
 function formatDocs(docs) {
   return docs
-    .map((doc, i) => `[Document ${i + 1}]\n${doc.pageContent}`)
+    .map((doc, i) => {
+      const source = doc.metadata.source || "unknown";
+      const category = doc.metadata.category || "general";
+      return `[Document ${i + 1} | Source: ${source} | Category: ${category}]\n${doc.pageContent}`;
+    })
     .join("\n\n---\n\n");
 }
 
@@ -41,7 +45,11 @@ Context:
     ["human", "{input}"],
   ]);
 
-  const retriever = vectorStore.asRetriever({ k: 3 });
+  function getRetriever(category) {
+  const filter =
+    category && category !== "all" ? { category } : undefined;
+  return vectorStore.asRetriever({ k: 3, filter });
+}
   const collection = await getChatCollection();
 
   // Helper: build a MongoDBChatMessageHistory for a given session
@@ -50,49 +58,49 @@ Context:
   }
 
   return {
-    async invoke({ input, sessionId }) {
-      const history = historyFor(sessionId);
-      const chatHistory = await history.getMessages();
+    async invoke({ input, sessionId, category = "all" }) {
+  const history = historyFor(sessionId);
+  const chatHistory = await history.getMessages();
 
-      const docs = await retriever.invoke(input);
-      const messages = await prompt.formatMessages({
-        context: formatDocs(docs),
-        chat_history: chatHistory,
-        input,
-      });
+  const retriever = getRetriever(category);
+  const docs = await retriever.invoke(input);
+  const messages = await prompt.formatMessages({
+    context: formatDocs(docs),
+    chat_history: chatHistory,
+    input,
+  });
 
-      const response = await llm.invoke(messages);
-      const answer = response.content;
+  const response = await llm.invoke(messages);
+  const answer = response.content;
 
-      // Persist both turns to MongoDB
-      await history.addUserMessage(input);
-      await history.addAIMessage(answer);
+  await history.addUserMessage(input);
+  await history.addAIMessage(answer);
 
-      return { answer, context: docs };
-    },
+  return { answer, context: docs };
+},
 
-    async *stream({ input, sessionId }) {
-      const history = historyFor(sessionId);
-      const chatHistory = await history.getMessages();
+    async *stream({ input, sessionId, category = "all" }) {
+  const history = historyFor(sessionId);
+  const chatHistory = await history.getMessages();
 
-      const docs = await retriever.invoke(input);
-      const messages = await prompt.formatMessages({
-        context: formatDocs(docs),
-        chat_history: chatHistory,
-        input,
-      });
+  const retriever = getRetriever(category);
+  const docs = await retriever.invoke(input);
+  const messages = await prompt.formatMessages({
+    context: formatDocs(docs),
+    chat_history: chatHistory,
+    input,
+  });
 
-      const llmStream = await llm.stream(messages);
-      let fullAnswer = "";
+  const llmStream = await llm.stream(messages);
+  let fullAnswer = "";
 
-      for await (const chunk of llmStream) {
-        fullAnswer += chunk.content;
-        yield { answer: chunk.content };
-      }
+  for await (const chunk of llmStream) {
+    fullAnswer += chunk.content;
+    yield { answer: chunk.content };
+  }
 
-      // Persist after the stream completes (we need the full answer)
-      await history.addUserMessage(input);
-      await history.addAIMessage(fullAnswer);
-    },
+  await history.addUserMessage(input);
+  await history.addAIMessage(fullAnswer);
+},
   };
 }

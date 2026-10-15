@@ -19,36 +19,36 @@ shared core powering both a **terminal CLI** and a **streaming web app**.
 
 ## 🏗️ Architecture
 ┌──────────────────────────┐ ┌──────────────────────────────────┐
-│ Terminal CLI │ │ Web (Express + Socket.IO) │
-│ src/index.js │ │ src/server.js + public/* │
-│ (readline) │ │ (streaming, per-session state) │
+│ Terminal CLI             │ │ Web (Express + Socket.IO)        │
+│ src/index.js             │ │ src/server.js + public/*         │
+│ (readline)               │ │ (streaming, per-session state)   │
 └────────────┬─────────────┘ └────────────────┬─────────────────┘
-│ │
-└──────────────┬─────────────────────────┘
+             │                                │
+     └──────────────┬─────────────────────────┘
 ▼
 ┌──────────────────────────────┐
-│ RAG Core │
-│ src/rag/ingest.js │
-│ src/rag/chain.js │
+│ RAG Core                     │
+│ src/rag/ingest.js            │
+│ src/rag/chain.js             │
 └──────────────┬───────────────┘
 ▼
 ┌──────────────────────────────┐
-│ LangChain.js + Gemini API │
+│ LangChain.js + Gemini API    │
 └──────────────────────────────┘
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js 20+ (ES Modules) |
-| LLM | Google Gemini 3.5 Flash-Lite (`@langchain/google`) |
-| Embeddings | Gemini `gemini-embedding-001` (`@langchain/google-genai`) |
-| RAG framework | LangChain.js (`@langchain/core`, `@langchain/classic`, `@langchain/textsplitters`) |
-| PDF parsing | `@langchain/community` + `pdf-parse` |
-| Vector store | In-memory (`MemoryVectorStore`) |
-| Web server | Express 5 |
+| Layer               | Technology |
+|---------------------|------------|
+| Runtime             | Node.js 20+ (ES Modules) |
+| LLM                 | Google Gemini 3.5 Flash-Lite (`@langchain/google`) |
+| Embeddings          | Gemini `gemini-embedding-001` (`@langchain/google-genai`) |
+| RAG framework       | LangChain.js (`@langchain/core`, `@langchain/classic`, `@langchain/textsplitters`) |
+| PDF parsing         | `@langchain/community` + `pdf-parse` |
+| Vector store        | In-memory (`MemoryVectorStore`) |
+| Web server          | Express 5 |
 | Real-time transport | Socket.IO |
-| Config | `dotenv` |
+| Config              | `dotenv` |
 
 ## 🚀 Getting Started
 

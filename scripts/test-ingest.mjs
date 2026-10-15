@@ -1,5 +1,5 @@
 // test-ingest.mjs
-import { indexDocuments } from "./src/rag/ingest.js";
+import { indexDocuments } from "../src/rag/ingest.js";
 
 const store = await indexDocuments(["./data/hotel_info.pdf"]);
 

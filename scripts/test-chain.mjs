@@ -1,6 +1,6 @@
 // test-chain.mjs
-import { indexDocuments } from "./src/rag/ingest.js";
-import { buildRAGChain } from "./src/rag/chain.js";
+import { indexDocuments } from "../src/rag/ingest.js";
+import { buildRAGChain } from "../src/rag/chain.js";
 
 const store = await indexDocuments(["./data/hotel_info.pdf"]);
 const chain = await buildRAGChain(store);

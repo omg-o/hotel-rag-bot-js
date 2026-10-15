@@ -7,6 +7,18 @@
 
 // io() is defined globally by /socket.io/socket.io.js
 const socket = io();
+// Persistent session ID: survives page refresh, stored in localStorage.
+let sessionId = localStorage.getItem("chat_session_id");
+if (!sessionId) {
+  sessionId = crypto.randomUUID();
+  localStorage.setItem("chat_session_id", sessionId);
+}
+
+// Tell the server our session ID on connect
+socket.on("connect", () => {
+  console.log("✓ Connected:", socket.id, "| session:", sessionId);
+  socket.emit("restoreSession", sessionId);
+});
 
 const messages = document.getElementById("messages");
 const form = document.getElementById("form");

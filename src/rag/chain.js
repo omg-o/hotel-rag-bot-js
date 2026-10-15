@@ -1,17 +1,24 @@
 // src/rag/chain.js
 //
 // Purpose: Wire together the vector store (retriever) and Gemini (LLM)
-// to produce natural-language answers grounded in the retrieved documents,
-// with support for multi-turn conversation history.
+// to produce grounded answers with streaming support.
+//
+// Conversation history is persisted in MongoDB, keyed by sessionId.
+// This means a page refresh (with the same sessionId) restores context.
 
 import { ChatGoogle } from "@langchain/google";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { createStuffDocumentsChain } from "@langchain/classic/chains/combine_documents";
-import { createRetrievalChain } from "@langchain/classic/chains/retrieval";
+import { MongoDBChatMessageHistory } from "@langchain/mongodb";
+import { getChatCollection } from "../db/mongo.js";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+function formatDocs(docs) {
+  return docs
+    .map((doc, i) => `[Document ${i + 1}]\n${doc.pageContent}`)
+    .join("\n\n---\n\n");
+}
 
 export async function buildRAGChain(vectorStore) {
   const llm = new ChatGoogle("gemini-3.5-flash-lite", {
@@ -19,8 +26,6 @@ export async function buildRAGChain(vectorStore) {
     maxRetries: 5,
   });
 
-  // MessagesPlaceholder is a slot that gets filled at runtime with an
-  // array of chat messages (the conversation history).
   const prompt = ChatPromptTemplate.fromMessages([
     [
       "system",
@@ -32,22 +37,62 @@ Be concise and friendly. If prices are mentioned, include the currency (INR).
 Context:
 {context}`,
     ],
-    new MessagesPlaceholder("chat_history"),  // ← history slot
+    new MessagesPlaceholder("chat_history"),
     ["human", "{input}"],
   ]);
 
-  const documentChain = await createStuffDocumentsChain({
-    llm,
-    prompt,
-    outputParser: new StringOutputParser(),
-  });
-
   const retriever = vectorStore.asRetriever({ k: 3 });
+  const collection = await getChatCollection();
 
-  const retrievalChain = await createRetrievalChain({
-    retriever,
-    combineDocsChain: documentChain,
-  });
+  // Helper: build a MongoDBChatMessageHistory for a given session
+  function historyFor(sessionId) {
+    return new MongoDBChatMessageHistory({ collection, sessionId });
+  }
 
-  return retrievalChain;
-} 
+  return {
+    async invoke({ input, sessionId }) {
+      const history = historyFor(sessionId);
+      const chatHistory = await history.getMessages();
+
+      const docs = await retriever.invoke(input);
+      const messages = await prompt.formatMessages({
+        context: formatDocs(docs),
+        chat_history: chatHistory,
+        input,
+      });
+
+      const response = await llm.invoke(messages);
+      const answer = response.content;
+
+      // Persist both turns to MongoDB
+      await history.addUserMessage(input);
+      await history.addAIMessage(answer);
+
+      return { answer, context: docs };
+    },
+
+    async *stream({ input, sessionId }) {
+      const history = historyFor(sessionId);
+      const chatHistory = await history.getMessages();
+
+      const docs = await retriever.invoke(input);
+      const messages = await prompt.formatMessages({
+        context: formatDocs(docs),
+        chat_history: chatHistory,
+        input,
+      });
+
+      const llmStream = await llm.stream(messages);
+      let fullAnswer = "";
+
+      for await (const chunk of llmStream) {
+        fullAnswer += chunk.content;
+        yield { answer: chunk.content };
+      }
+
+      // Persist after the stream completes (we need the full answer)
+      await history.addUserMessage(input);
+      await history.addAIMessage(fullAnswer);
+    },
+  };
+}

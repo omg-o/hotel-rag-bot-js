@@ -9,7 +9,7 @@
     "web": "node src/server.js"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "22.x"
   },
   "overrides": {
     "@langchain/core": "^1.0.0"
